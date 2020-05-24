@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8"/>
+		<link rel="stylesheet" type="text/css" href="./conwayGOLjs.css">
+		<script src="./perlinJS.js"></script>
+	</head>
+	<body>
+
+		<canvas id="lifeImage" >There is no canvas!!!</canvas>
+
+        <table id="infobox">
+			<tr><td>
+				Conway's Game of Life<br>
+				<br>
+				Use the mouse to draw on the canvas.<br>
+				<br>
+				<button id="startButton">Start</button>
+				<button id="randButton">Randomize</button>
+				<button id="clearButton">Clear</button>
+			</td></tr>
+		</table>
+		
+
+		<script>
+			"use strict";
+
+			//way to capture the mouse over everything
+			document.getElementsByTagName("BODY")[0].setAttribute("onMouseDown", "doMouse(true)");
+			document.getElementsByTagName("BODY")[0].setAttribute("onMouseUp", "doMouse(false)");
+			document.getElementsByTagName("BODY")[0].setAttribute("onMouseLeave", "doMouse()");
+
+			//add event listeners for the buttons
+			document.getElementById("startButton").addEventListener("click", start);
+			document.getElementById("randButton").addEventListener("click", randomize);
+			document.getElementById("clearButton").addEventListener("click", clearScreen);
+
+			//scale the image
+			//framerate depends on the size of the screen and scale
+			const IMAGE_SCALE=6;
+
+			//size of the screen
+			const WINSIZE_X=window.innerWidth;
+			const WINSIZE_Y=window.innerHeight;
+			//size of the image to draw after scale
+			const SIZE_X=Math.round(window.innerWidth/IMAGE_SCALE);
+			const SIZE_Y=Math.round(window.innerHeight/IMAGE_SCALE);
+
+			//main canvas element
+			var elm = document.getElementById("lifeImage");
+			var ctx = elm.getContext("2d");
+			elm.width=WINSIZE_X;
+			elm.height=WINSIZE_Y;
+
+			//image canvas to draw on
+			var imgElm=document.createElement("canvas");
+			var imgCtx=imgElm.getContext("2d");
+			var imgData =imgCtx.createImageData(SIZE_X, SIZE_Y);
+			imgElm.width=WINSIZE_X;
+			imgElm.height=WINSIZE_Y;
+
+			//scale the main canvas
+			ctx.scale(IMAGE_SCALE,IMAGE_SCALE);
+			ctx.imageSmoothingEnabled=false;
+
+			var go;//do animation
+			var draw=true;//draw with the mouse	
+			var lifeArray=[];//cell data
+			var neighbor=[];//neighbor cell count
+
+			//clear the screen at load
+			clearScreen();
+
+			//start and stop the animation
+			function start()
+			{
+				//if animation isn't going
+				if(!go)
+				{
+					//set go to true
+					go=true;
+					//change the button text
+					document.getElementById("startButton").innerHTML="Stop";
+					//do main animation loop
+					doLife();
+					
+				}
+				else
+				{
+					//stop animation
+					go=false;
+					//change the button text
+					document.getElementById("startButton").innerHTML="Start";
+				}
+			}
+
+			//Mouse functions when the mouse is clicked or not
+			function doMouse(click=false)
+			{
+				//if clicked
+				if(click)
+				{
+					//mouse tracking
+					let x = Math.floor(event.clientX*SIZE_X/WINSIZE_X);
+					let y = Math.floor(event.clientY*SIZE_Y/WINSIZE_Y);
+
+					//check if the mouse is over an alive cell and make draw to erase
+					if(lifeArray[(y*SIZE_X)+x]==1&&!go) draw=false;
+					else draw=true;//else mouse can draw
+
+					//set attribute for mouse tracking and drawing
+					document.getElementsByTagName("BODY")[0].setAttribute("onmousemove", "drawPoint(event)");
+					drawPoint(event);//also draw a point for this click
+				}
+				else
+					//remove mouse tracking
+					document.getElementsByTagName("BODY")[0].removeAttribute("onmousemove");
+			}
+			
+			//draws points to the screen turning cells to alive or dead
+			//event parameter is for mouse tracking
+			function drawPoint(event)
+			{
+				//mouse tracking
+				let x = Math.floor(event.clientX*(SIZE_X/WINSIZE_X));
+				let y = Math.floor(event.clientY*(SIZE_Y/WINSIZE_Y));
+
+				//create living cells
+				if(draw)
+				{
+					//draw pixel at mouse pos
+					imgData.data[(y*SIZE_X*4)+x*4]=0;
+					imgData.data[(y*SIZE_X*4)+x*4+1]=255;
+					imgData.data[(y*SIZE_X*4)+x*4+2]=255;
+
+					//also add a cell for the life and neighbor arrays
+					if(lifeArray[(y*SIZE_X)+x]!=1) addNeighbor(x, y);
+					lifeArray[(y*SIZE_X)+x]=1;
+				}else
+				//kill cells
+				{
+					//erase pixel at mouse pos
+					imgData.data[(y*SIZE_X*4)+x*4]=0;
+					imgData.data[(y*SIZE_X*4)+x*4+1]=0;
+					imgData.data[(y*SIZE_X*4)+x*4+2]=0;
+
+					//also erase a cell for the life and neighbor arrays
+					if(lifeArray[(y*SIZE_X)+x]==1) subNeighbor(x, y);
+					lifeArray[(y*SIZE_X)+x]=0;
+				}
+
+				//place image on canvas
+				imgCtx.putImageData(imgData, 0, 0);
+				ctx.drawImage(imgElm,0,0);
+			}
+
+			//randomize the screen with dots scattered by perlin noise
+			function randomize()
+			{
+				//one octive
+				let octive=new perlin(SIZE_X,SIZE_Y, 100);
+
+				//draw the dots
+				for(let y=0; y<SIZE_Y; y++)
+					for (let x=0; x<SIZE_X; x++)
+					{
+						//get a point in the perlin noise heightmap
+						let c=100*(octive.getHeight(x,y));
+
+						//place a dot based off a random 0 or 1 and an area of the heightmap
+						if(((Math.random()*2)>1)&&(c>-1&&c<1))
+						{
+							//draw a pixel
+							imgData.data[(y*SIZE_X*4)+x*4]=0;
+							imgData.data[(y*SIZE_X*4)+x*4+1]=255;
+							imgData.data[(y*SIZE_X*4)+x*4+2]=255;
+
+							//also add a cell for the life and neighbor arrays
+							if(lifeArray[(y*SIZE_X)+x]!=1) addNeighbor(x, y);
+							lifeArray[(y*SIZE_X)+x]=1;
+						}
+					}
+				
+				//place image on canvas
+				imgCtx.putImageData(imgData, 0, 0);
+				ctx.drawImage(imgElm,0,0);
+			}
+
+			//clear the screen black and erase all cells
+			function clearScreen()
+			{
+				for(let y=0; y<SIZE_Y; y++)
+					for (let x=0; x<SIZE_X; x++)
+					{
+						//draw black pixels
+						imgData.data[(y*SIZE_X*4)+x*4]=0;
+						imgData.data[(y*SIZE_X*4)+x*4+1]=0;
+						imgData.data[(y*SIZE_X*4)+x*4+2]=0;
+						imgData.data[(y*SIZE_X*4)+x*4+3]=255;
+
+						//clear all cells for the life and neighbor arrays
+						lifeArray[(y*SIZE_X)+x]=0;
+						neighbor[(y*SIZE_X)+x]=0;
+					}
+
+				//place image on canvas
+				imgCtx.putImageData(imgData, 0, 0);
+				ctx.drawImage(imgElm,0,0);
+			}
+
+			//adds all the surrounding neighbors of a cell at the x and y pos by one
+			function addNeighbor(x, y)
+			{
+
+				//use mod to wrap the image
+				let xMinOne=(((x-1)+SIZE_X)%SIZE_X);
+				let xPlsOne=(((x+1)+SIZE_X)%SIZE_X);
+				let yMinOne=(((y-1)+SIZE_Y)%SIZE_Y);
+				let yPlsOne=(((y+1)+SIZE_Y)%SIZE_Y);
+
+				//all the surrounding neighbors by one
+				neighbor[(yMinOne*SIZE_X)+xMinOne]++;
+				neighbor[(yMinOne*SIZE_X)+x]++;
+				neighbor[(yMinOne*SIZE_X)+xPlsOne]++;
+				neighbor[(y*SIZE_X)+xMinOne]++;
+				neighbor[(y*SIZE_X)+xPlsOne]++;
+				neighbor[(yPlsOne*SIZE_X)+xMinOne]++;
+				neighbor[(yPlsOne*SIZE_X)+x]++;
+				neighbor[(yPlsOne*SIZE_X)+xPlsOne]++;
+			}
+
+			//subtracts all the surrounding neighbors of a cell at the x and y pos by one
+			function subNeighbor(x, y)
+			{
+				//use mod to wrap the image
+				let xMinOne=(((x-1)+SIZE_X)%SIZE_X);
+				let xPlsOne=(((x+1)+SIZE_X)%SIZE_X);
+				let yMinOne=(((y-1)+SIZE_Y)%SIZE_Y);
+				let yPlsOne=(((y+1)+SIZE_Y)%SIZE_Y);
+
+				//subtarct the surrounding neighbors by one
+				neighbor[(yMinOne*SIZE_X)+xMinOne]--;
+				neighbor[(yMinOne*SIZE_X)+x]--;
+				neighbor[(yMinOne*SIZE_X)+xPlsOne]--;
+				neighbor[(y*SIZE_X)+xMinOne]--;
+				neighbor[(y*SIZE_X)+xPlsOne]--;
+				neighbor[(yPlsOne*SIZE_X)+xMinOne]--;
+				neighbor[(yPlsOne*SIZE_X)+x]--;
+				neighbor[(yPlsOne*SIZE_X)+xPlsOne]--;
+			}
+
+			//main loop that checks each cell's neighbors and determines if it dies or not
+			//then updates the screen and array data
+			function doLife()
+			{
+				//hold a buffer to change the state of the image while checking for living cells in the other
+				let bufferArray=[];
+
+				//copy lifeArray to bufferArray
+				for(let y=0; y<SIZE_Y; y++)
+					for(let x=0; x<SIZE_X; x++)
+						bufferArray[(y*SIZE_X)+x]=lifeArray[(y*SIZE_X)+x];
+				
+				//check the state of the lifeArray and it's neighbors
+				//and update the buffer if the cell is alive or dead
+				//based off three rules https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life#Rules
+				for(let y=0; y<SIZE_Y; y++)
+					for(let x=0; x<SIZE_X; x++)
+					{
+						//Any live cell with two or three live neighbours survives.
+						if(lifeArray[(y*SIZE_X)+x]==1&&(neighbor[(y*SIZE_X)+x]==2||neighbor[(y*SIZE_X)+x]==3)) bufferArray[(y*SIZE_X)+x]=1;
+						//Any dead cell with three live neighbours becomes a live cell.
+						else if(lifeArray[(y*SIZE_X)+x]==0&&(neighbor[(y*SIZE_X)+x]==3)) bufferArray[(y*SIZE_X)+x]=1;
+						//All other live cells die in the next generation. Similarly, all other dead cells stay dead.
+						else bufferArray[(y*SIZE_X)+x]=0;
+					}
+
+				//update any pixel, cell, neighbor, and the trail colors on the screen
+				for(let y=0; y<SIZE_Y; y++)
+					for(let x=0; x<SIZE_X; x++)
+					{
+						//if cell was dead but now alive
+						if(lifeArray[(y*SIZE_X)+x]==0&&bufferArray[(y*SIZE_X)+x]==1)
+						{
+							//draw an alive pixel
+							imgData.data[(y*SIZE_X*4)+x*4]=0;
+							imgData.data[(y*SIZE_X*4)+x*4+1]=255;
+							imgData.data[(y*SIZE_X*4)+x*4+2]=255;
+
+							//add a neighor for the cells around it
+							addNeighbor(x, y);
+						}
+						//if a cell was alive and now dead
+						else if(lifeArray[(y*SIZE_X)+x]==1&&bufferArray[(y*SIZE_X)+x]==0)
+						{
+							//draw the start of the trail color as a dead pixel
+							imgData.data[(y*SIZE_X*4)+x*4]=255;
+							imgData.data[(y*SIZE_X*4)+x*4+1]=0;
+							imgData.data[(y*SIZE_X*4)+x*4+2]=255;
+
+							//subtract a neighor for the cells around it
+							subNeighbor(x, y);
+						}
+						//if trail color has red and it's a dead cell subtract a bit to 0 each frame
+						//(checking dead pixel if the color scheme changes)
+						else if(imgData.data[(y*SIZE_X*4)+x*4]>4&&bufferArray[(y*SIZE_X)+x]==0)
+							imgData.data[(y*SIZE_X*4)+x*4]-=4;
+						//if the trail color has no more red start subtracting the blue
+						else if(imgData.data[(y*SIZE_X*4)+x*4+2]>0&&bufferArray[(y*SIZE_X)+x]==0)
+							imgData.data[(y*SIZE_X*4)+x*4+2]--;
+
+						lifeArray[(y*SIZE_X)+x]=bufferArray[(y*SIZE_X)+x];
+					}
+
+					//place image on canvas
+					imgCtx.putImageData(imgData, 0, 0);
+					ctx.drawImage(imgElm,0,0);
+
+					//if go is true start doing this function again for the next frame
+					if(go) window.requestAnimationFrame(doLife);
+			}
+		</script>
+
+	</body>
+</html>
