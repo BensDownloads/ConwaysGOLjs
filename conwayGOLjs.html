@@ -43,8 +43,8 @@
 			const WINSIZE_X=window.innerWidth;
 			const WINSIZE_Y=window.innerHeight;
 			//size of the image to draw after scale
-			const SIZE_X=Math.round(window.innerWidth/IMAGE_SCALE);
-			const SIZE_Y=Math.round(window.innerHeight/IMAGE_SCALE);
+			const SIZE_X=Math.ceil(window.innerWidth/IMAGE_SCALE);
+			const SIZE_Y=Math.ceil(window.innerHeight/IMAGE_SCALE);
 
 			//main canvas element
 			var elm = document.getElementById("lifeImage");
