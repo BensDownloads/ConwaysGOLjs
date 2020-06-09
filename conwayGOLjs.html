@@ -109,8 +109,8 @@
 					else draw=true;//else mouse can draw
 
 					//set attribute for mouse tracking and drawing
-					document.getElementsByTagName("BODY")[0].setAttribute("onmousemove", "drawPoint(event)");
-					drawPoint(event);//also draw a point for this click
+					document.getElementsByTagName("BODY")[0].setAttribute("onmousemove", "drawPoint()");
+					drawPoint();//also draw a point for this click
 				}
 				else
 					//remove mouse tracking
@@ -118,8 +118,7 @@
 			}
 			
 			//draws points to the screen turning cells to alive or dead
-			//event parameter is for mouse tracking
-			function drawPoint(event)
+			function drawPoint()
 			{
 				//mouse tracking
 				let x = Math.floor(event.clientX*(SIZE_X/WINSIZE_X));
@@ -218,7 +217,7 @@
 				let yMinOne=(((y-1)+SIZE_Y)%SIZE_Y);
 				let yPlsOne=(((y+1)+SIZE_Y)%SIZE_Y);
 
-				//all the surrounding neighbors by one
+				//add the surrounding neighbors by one
 				neighbor[(yMinOne*SIZE_X)+xMinOne]++;
 				neighbor[(yMinOne*SIZE_X)+x]++;
 				neighbor[(yMinOne*SIZE_X)+xPlsOne]++;
