@@ -12,26 +12,20 @@
             {
                 //hold the total size of the image and each cell's size
                 this._cellSize=sizeC;
-                this._x=sizeY;
-                this._y=sizeY;
-
-                //get the total number of cells in the image
-                let lx=Math.trunc(sizeX/sizeC)+2;
-                let ly=Math.trunc(sizeY/sizeC)+2;
 
                 //start making the lattice y
-                this.lattice=[];
-                for(let j=0; j<ly; j++)
+                this._lattice=[];
+                for(let j=0; j<sizeY+1; j++)
                 {
                     //start making the lattice x
-                    this.lattice[j]=[];
+                    this._lattice[j]=[];
 
                     //get random numbers for each lattice point
-                    for(let i=0; i<lx;i++)
+                    for(let i=0; i<sizeX+1;i++)
                     {
-                        this.lattice[j][i]={x:0,y:0};
-                        this.lattice[j][i].x=((Math.random()*2)-1)*this._cellSize;
-                        this.lattice[j][i].y=((Math.random()*2)-1)*this._cellSize;
+                        this._lattice[j][i]={x:0,y:0};
+                        this._lattice[j][i].x=((Math.random()*2)-1)*this._cellSize;
+                        this._lattice[j][i].y=((Math.random()*2)-1)*this._cellSize;
                     }
                 }
                 
@@ -81,7 +75,7 @@
                 let dy=y-(iy*this._cellSize);
 
                 //gets the dot product             
-                return (dx*this.lattice[iy][ix].x)+(dy*this.lattice[iy][ix].y);
+                return (dx*this._lattice[iy][ix].x)+(dy*this._lattice[iy][ix].y);
             }
 
             //smooth the two vectors togeather, s and t

@@ -16,6 +16,7 @@
 				Use the mouse to draw on the canvas.<br>
 				<br>
 				<button id="startButton">Start</button>
+				<button id="tickButton">Tick</button>
 				<button id="randButton">Randomize</button>
 				<button id="clearButton">Clear</button>
 			</td></tr>
@@ -32,6 +33,7 @@
 
 			//add event listeners for the buttons
 			document.getElementById("startButton").addEventListener("click", start);
+			document.getElementById("tickButton").addEventListener("click", doTick);
 			document.getElementById("randButton").addEventListener("click", randomize);
 			document.getElementById("clearButton").addEventListener("click", clearScreen);
 
@@ -157,7 +159,8 @@
 			function randomize()
 			{
 				//one octive
-				let octive=new perlin(SIZE_X,SIZE_Y, 100);
+				let cellSize=500/IMAGE_SCALE;
+				let octive=new perlin(SIZE_X/cellSize,SIZE_X/cellSize, cellSize);
 
 				//draw the dots
 				for(let y=0; y<SIZE_Y; y++)
@@ -246,6 +249,16 @@
 				neighbor[(yPlsOne*SIZE_X)+xMinOne]--;
 				neighbor[(yPlsOne*SIZE_X)+x]--;
 				neighbor[(yPlsOne*SIZE_X)+xPlsOne]--;
+			}
+
+			//stop and just do one frame
+			function doTick()
+			{
+				go=false;
+				//change the button text
+				document.getElementById("startButton").innerHTML="Start";
+				
+				doLife();
 			}
 
 			//main loop that checks each cell's neighbors and determines if it dies or not
