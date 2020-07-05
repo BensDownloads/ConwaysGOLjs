@@ -266,13 +266,9 @@
 			function doLife()
 			{
 				//hold a buffer to change the state of the image while checking for living cells in the other
-				let bufferArray=[];
-
 				//copy lifeArray to bufferArray
-				for(let y=0; y<SIZE_Y; y++)
-					for(let x=0; x<SIZE_X; x++)
-						bufferArray[(y*SIZE_X)+x]=lifeArray[(y*SIZE_X)+x];
-				
+				let bufferArray=[...lifeArray];
+
 				//check the state of the lifeArray and it's neighbors
 				//and update the buffer if the cell is alive or dead
 				//based off three rules https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life#Rules
@@ -320,9 +316,10 @@
 						//if the trail color has no more red start subtracting the blue
 						else if(imgData.data[(y*SIZE_X*4)+x*4+2]>0&&bufferArray[(y*SIZE_X)+x]==0)
 							imgData.data[(y*SIZE_X*4)+x*4+2]--;
-
-						lifeArray[(y*SIZE_X)+x]=bufferArray[(y*SIZE_X)+x];
 					}
+
+					//copy bufferArray back into lifeArray
+					lifeArray=[...bufferArray];
 
 					//place image on canvas
 					imgCtx.putImageData(imgData, 0, 0);
